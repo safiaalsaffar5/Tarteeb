@@ -190,6 +190,14 @@ input[type=range]{width:100%;accent-color:var(--brand);height:22px;margin:0}
 .hint{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:10px;padding:8px 12px;min-height:38px}
 
 /* budget */
+.step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--brand-soft);color:var(--brand);font-size:12.5px;font-weight:700;margin-inline-end:8px;vertical-align:1px}
+.income{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:24px;align-items:start}
+.fixlist{display:flex;flex-direction:column;gap:8px}
+.fixrow{display:grid;grid-template-columns:minmax(0,1fr) 140px 40px;gap:8px;align-items:center}
+.remain{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:24px;align-items:end;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.suggest{margin-top:16px;padding:16px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line)}
+.suggest .rows dd{display:flex;align-items:center}
+.inp.amt{min-height:34px;padding:4px 10px;max-width:130px;margin-inline-start:auto;display:block}
 .salary{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:28px;align-items:end}
 .split{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface-2);gap:2px}
 .split i{display:block;height:100%;transition:width .2s}
@@ -279,14 +287,15 @@ input[type=checkbox]{width:17px;height:17px;accent-color:var(--brand)}
 .toast.out{opacity:0;transform:translateY(8px);transition:.3s}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:95}
 
-@media (max-width:980px){.grid-a{grid-template-columns:1fr}.salary{grid-template-columns:1fr}}
+@media (max-width:980px){.grid-a{grid-template-columns:1fr}.salary,.income,.remain{grid-template-columns:1fr}}
 @media (max-width:760px){
   .sthead,.bhead{display:none}
   .srow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"n r" "b b";row-gap:10px}
   .srow .sname{grid-area:n}.srow .barcell{grid-area:b}.srow .c-sp{display:none}.srow .c-rem{grid-area:r}
   .brow-main{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"n n a" "p p p" "x y z";row-gap:10px}
   .bname{grid-area:n}.bact{grid-area:a}.bpct{grid-area:p}.bn1{grid-area:x}.bn2{grid-area:y}.bn3{grid-area:z}
-  .bn{text-align:start}.ml{display:block;font-size:11.5px;color:var(--ink-3)}
+  .bn{text-align:start}.inp.amt{margin-inline-start:0;max-width:100%}
+  .fixrow{grid-template-columns:minmax(0,1fr) 110px 36px}.ml{display:block;font-size:11.5px;color:var(--ink-3)}
 }
 @media (max-width:720px){
   .nav{display:none}
@@ -399,7 +408,7 @@ const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth
 /* ---------- state ---------- */
 const STORE='tarteeb.v1';
 let S=null;
-const UI={view:'home',month:nowKey(),openSec:null,edit:false,confirm:null,logFilter:'all',logQ:'',imp:null,animate:true,extra:0};
+const UI={suggest:false,view:'home',month:nowKey(),openSec:null,edit:false,confirm:null,logFilter:'all',logQ:'',imp:null,animate:true,extra:0};
 const lastVals={};
 
 function defaultSections(){return[
@@ -417,17 +426,17 @@ function demo(){
   const living=['بقالة الأسبوع','بنزين','مطعم الغداء','صيدلية','مواصلات','سوبرماركت','خضار وفواكه','غسيل سيارة'];
   const fun=['كافيه','اشتراك نتفلكس','سينما','طلب توصيل','تسوق ملابس','هدية','ألعاب','طلعة مع الأصدقاء'];
   for(let i=5;i>=0;i--){
-    const key=shiftKey(cur,-i),salary=i>=2?12000:12500,m={salary,pcts:{},entries:[]};
+    const key=shiftKey(cur,-i),salary=i>=2?12000:12500,m={salary,pcts:{},entries:[],fixed:[{id:uid(),name:'قسط السيارة',amount:1800}]},base=salary-1800;
     secs.forEach(s=>m.pcts[s.id]=s.pct);
     const rr=ratios[5-i],push=(sec,title,amount,day)=>{
       if(i===0&&day>today)return;
       m.entries.push({id:uid(),sec,title,amount:Math.round(amount),date:key+'-'+pad(Math.min(day,daysIn(key)))});};
-    const bills=salary*.4;
+    const bills=base*.4;
     push('bills','إيجار الشقة',Math.round(bills*.72/50)*50,1);
     push('bills','فاتورة الكهرباء',250+Math.round(r()*160),9);
     push('bills','إنترنت المنزل',199,5);push('bills','باقة الجوال',150,6);
-    push('bills','قسط الجمعية',Math.round(bills*.1/50)*50,3);
-    [['living',living,salary*.2*rr[0]],['fun',fun,salary*.15*rr[1]]].forEach(([sec,pool,total])=>{
+    push('bills','فاتورة المياه',90+Math.round(r()*40),3);
+    [['living',living,base*.2*rr[0]],['fun',fun,base*.15*rr[1]]].forEach(([sec,pool,total])=>{
       const n=sec==='living'?7:6,w=Array.from({length:n},()=>.4+r()),ws=w.reduce((a,b)=>a+b,0);
       w.forEach((x,j)=>push(sec,pool[(j+Math.floor(r()*3))%pool.length],total*x/ws,2+Math.floor(r()*26)));
     });
@@ -435,7 +444,7 @@ function demo(){
     if(i===1)push('save','إيداع إضافي',500,18);
     months[key]=m;
   }
-  return{v:1,demo:true,name:'',currency:'sar',opening:4000,goal:{name:'سيارة جديدة',target:60000},sections:secs,months,unlocked:[],rules:{}};
+  return{v:1,demo:true,name:'',currency:'sar',opening:3000,goal:{name:'سيارة جديدة',target:60000},sections:secs,months,unlocked:[],rules:{}};
 }
 function fresh(){const secs=defaultSections();return{v:1,demo:false,name:'',currency:'sar',opening:0,goal:{name:'هدفي الأول',target:20000},sections:secs,months:{},unlocked:[],rules:{}};}
 function load(){try{const t=localStorage.getItem(STORE);if(t){const o=JSON.parse(t);if(o&&o.v===1&&o.sections&&o.months)return o}}catch(e){}return null}
@@ -445,19 +454,21 @@ function ensureMonth(key){
   const keys=Object.keys(S.months).sort();let ref=null;
   for(const k of keys){if(k<key)ref=k}
   if(!ref&&keys.length)ref=keys[0];
-  const m={salary:ref?S.months[ref].salary:0,pcts:{},entries:[]};
+  const m={salary:ref?S.months[ref].salary:0,pcts:{},entries:[],fixed:ref?(S.months[ref].fixed||[]).map(f=>({id:uid(),name:f.name,amount:f.amount})):[]};
   S.sections.forEach(s=>m.pcts[s.id]=s.pct);
   S.months[key]=m;return m;
 }
 const cur=()=>CURR[S.currency]||'ر.س';
 const money=(n,o={})=>{const neg=n<0&&Math.round(n)!==0;return `<span class="mny"><span class="num">${neg?'−':(o.plus&&n>0.5?'+':'')}${fmt(Math.abs(n))}</span><span class="cur">${cur()}</span></span>`};
+const fmtP=p=>{const r=Math.round(p*10)/10;return (Number.isInteger(r)?r:r.toFixed(1))+'%'};
 const mtxt=n=>(n<0&&Math.round(n)!==0?'−':'')+fmt(Math.abs(n))+' '+cur();
 
 /* ---------- calculations ---------- */
 function calc(key){
   const m=S.months[key];if(!m)return null;
+  const fixed=m.fixed||[],fixedTotal=fixed.reduce((a,f)=>a+(+f.amount||0),0),base=Math.max(0,m.salary-fixedTotal);
   const secs=S.sections.map(sec=>{
-    const pct=m.pcts[sec.id]!=null?m.pcts[sec.id]:(sec.pct||0),alloc=m.salary*pct/100;
+    const pct=m.pcts[sec.id]!=null?m.pcts[sec.id]:(sec.pct||0),alloc=base*pct/100;
     const entries=m.entries.filter(e=>e.sec===sec.id),sum=entries.reduce((a,e)=>a+e.amount,0);
     return sec.kind==='save'?{sec,pct,alloc,entries,deposit:sum,saved:alloc+sum,spent:0,remaining:0}:{sec,pct,alloc,entries,deposit:0,saved:0,spent:sum,remaining:alloc-sum};
   });
@@ -465,7 +476,7 @@ function calc(key){
   const saveSum=secs.reduce((a,s)=>a+s.saved,0),left=spendAlloc-spent,closed=key<nowKey();
   const counted=closed?saveSum+left:saveSum+Math.min(0,left),projected=closed?0:Math.max(0,left);
   const pctTotal=secs.reduce((a,s)=>a+s.pct,0);
-  return{key,salary:m.salary,secs,spendAlloc,spent,saveSum,left,closed,counted,projected,
+  return{key,salary:m.salary,fixed,fixedTotal,base,secs,spendAlloc,spent,saveSum,left,closed,counted,projected,
     rate:m.salary?(counted+projected)/m.salary:0,within:spent<=spendAlloc+0.5,allWithin:spend.every(s=>s.remaining>=-0.5),pctTotal,
     hasData:m.entries.length>0||m.salary>0};
 }
@@ -481,7 +492,7 @@ function avgNet(T){
 function streak(T){let n=0;for(let i=T.length-1;i>=0;i--){const c=T[i].c;if(c.salary>0&&c.within)n++;else break}return n}
 function badges(T){
   const total=T.length?T[T.length-1].total:(S.opening||0),st=streak(T),goalP=S.goal.target?total/S.goal.target:0;
-  const bestRate=Math.max(0,...T.map(p=>p.c.salary?(p.c.counted+p.c.projected)/p.c.salary:0));
+  const bestRate=Math.max(0,...T.filter(p=>p.c.closed).map(p=>p.c.salary?p.c.counted/p.c.salary:0));
   const emerg=T.reduce((a,p)=>{const s=p.c.secs.find(x=>x.sec.id==='emerg');return a+(s?s.saved:0)},0);
   const lastSal=T.length?T[T.length-1].c.salary:0;
   const perfect=T.some(p=>p.c.salary>0&&p.c.allWithin&&p.c.closed);
@@ -551,7 +562,7 @@ function statusLine(c){
 function secRow(s){
   const isSave=s.sec.kind==='save',w=isSave?100:Math.min(100,usage(s)*100);
   return `<button class="srow" style="--c:${s.sec.color}" data-act="open-sec" data-id="${s.sec.id}">
-   <span class="sname"><span class="dotic">${ic(s.sec.icon)}</span><span style="min-width:0"><b>${esc(s.sec.name)}</b><small><span dir="ltr">${s.pct}%</span> من الراتب</small></span></span>
+   <span class="sname"><span class="dotic">${ic(s.sec.icon)}</span><span style="min-width:0"><b>${esc(s.sec.name)}</b><small><span dir="ltr">${fmtP(s.pct)}</span> من الباقي</small></span></span>
    <span class="barcell"><span class="bar ${barCls(s)}"><i data-w="${w}"></i></span><small>${isSave?'محوّل للادخار':(s.alloc?Math.round(usage(s)*100)+'% مستخدم':'بدون ميزانية')}</small></span>
    <span class="tnum c-sp">${isSave?money(s.deposit)+'<small>إيداع إضافي</small>':money(s.spent)+`<small>من ${fmt(s.alloc)}</small>`}</span>
    <span class="tnum c-rem ${!isSave&&s.remaining<0?'neg':''}">${isSave?money(s.saved)+'<small>مجنّب</small>':money(Math.abs(s.remaining))+`<small>${s.remaining<0?'تجاوز':'متبقٍ'}</small>`}</span>
@@ -565,7 +576,7 @@ function viewHome(){
   const tf=c.closed?1:new Date().getDate()/daysIn(key),sf=c.spendAlloc?c.spent/c.spendAlloc:0;
   const eta=etaInfo(T,UI.extra),goalP=S.goal.target?Math.min(1,pt.total/S.goal.target):0,stk=streak(T),bs=badges(T),un=bs.filter(b=>b.unlocked).length;
   const sal=c.salary||1,W=x=>Math.max(0,x/sal*100);
-  const C_SP='var(--ink-2)',C_LEFT='var(--brand-mid)',C_SAVE='var(--brand)';
+  const C_FX='var(--ink-3)',C_SP='var(--ink-2)',C_LEFT='var(--brand-mid)',C_SAVE='var(--brand)';
   return `
   <div class="page-h"><div><span class="eyebrow">${monthLong(key)}</span><h1>${S.name?'أهلاً '+esc(S.name):'نظرة عامة'}</h1><p class="status ${st.cls}"><i></i>${st.text}</p></div>
     <button class="btn hide-m" data-act="add">${ic('plus')}عملية جديدة</button></div>
@@ -583,9 +594,10 @@ function viewHome(){
 
     <section class="card" aria-label="ملخص الشهر">
       <div class="card-h"><h2>ملخص ${monthName(key)}</h2>${c.salary?`<span class="pill ${c.rate>=.2?'good':c.rate>0?'warn':'bad'}">ادخار <span dir="ltr">${Math.round(c.rate*100)}%</span></span>`:''}</div>
-      <div class="stackbar" role="img" aria-label="توزيع الراتب">${c.salary?`<i style="width:${Math.min(100,W(c.spent))}%;background:${c.left<0?'var(--bad)':C_SP}"></i><i style="width:${W(Math.max(0,c.left))}%;background:${C_LEFT}"></i><i style="width:${W(c.saveSum)}%;background:${C_SAVE}"></i>`:''}</div>
+      <div class="stackbar" role="img" aria-label="توزيع الراتب">${c.salary?`<i style="width:${Math.min(100,W(c.fixedTotal))}%;background:${C_FX}"></i><i style="width:${Math.min(100,W(c.spent))}%;background:${c.left<0?'var(--bad)':C_SP}"></i><i style="width:${W(Math.max(0,c.left))}%;background:${C_LEFT}"></i><i style="width:${W(c.saveSum)}%;background:${C_SAVE}"></i>`:''}</div>
       <dl class="rows">
-        <div><dt>الراتب</dt><dd class="total">${money(c.salary)}</dd></div>
+        <div><dt>الراتب</dt><dd>${money(c.salary)}</dd></div>
+        ${c.fixedTotal?`<div><dt style="--c:${C_FX}"><i></i>التزامات ثابتة</dt><dd>${money(-c.fixedTotal)}</dd></div><div><dt>الباقي للتوزيع</dt><dd class="total">${money(c.base)}</dd></div>`:''}
         <div><dt style="--c:${c.left<0?'var(--bad)':C_SP}"><i></i>المصروف</dt><dd>${money(c.spent)}</dd></div>
         <div><dt style="--c:${C_LEFT}"><i></i>${c.left<0?'تجاوز الميزانية':'متبقٍ للصرف'}</dt><dd class="${c.left<0?'neg':''}">${money(Math.abs(c.left))}</dd></div>
         <div><dt style="--c:${C_SAVE}"><i></i>مجنّب للادخار</dt><dd>${money(c.saveSum)}</dd></div>
@@ -671,27 +683,72 @@ function bindChart(){
 }
 
 /* ---------- Budget ---------- */
-function splitBar(c){return c.secs.map(s=>`<i data-seg="${s.sec.id}" style="width:${s.pct}%;background:${s.sec.color}" title="${esc(s.sec.name)} ${s.pct}%"></i>`).join('')}
-function totalStatus(total){
-  return Math.round(total)===100?`<span class="pill good">المجموع <span dir="ltr">100%</span></span>`:total<100?`<span class="pill warn"><span dir="ltr">${Math.round(100-total)}%</span> غير موزّعة</span>`:`<span class="pill bad">زيادة <span dir="ltr">${Math.round(total-100)}%</span></span>`;
+function splitBar(c){return c.secs.map(s=>`<i data-seg="${s.sec.id}" style="width:${s.pct}%;background:${s.sec.color}" title="${esc(s.sec.name)} ${fmtP(s.pct)}"></i>`).join('')}
+function totalStatus(total,base){
+  const d=100-total,amt=base*Math.abs(d)/100;
+  return Math.abs(d)<0.05?`<span class="pill good">تم توزيع الباقي بالكامل</span>`:d>0?`<span class="pill warn">${mtxt(amt)} بدون قسم (<span dir="ltr">${fmtP(d)}</span>)</span>`:`<span class="pill bad">موزّع أكثر من المتاح بـ ${mtxt(amt)}</span>`;
+}
+function suggestPlan(c){
+  const ratio=c.salary?c.fixedTotal/c.salary:0;
+  const saves=S.sections.filter(s=>s.kind==='save'),spends=S.sections.filter(s=>s.kind!=='save');
+  let saveT=saves.length?(ratio>.45?20:ratio>.3?25:30):0;if(!spends.length)saveT=100;
+  const out={};
+  if(saves.length){
+    const em=saves.find(s=>s.id==='emerg');
+    if(em&&saves.length>1){out[em.id]=Math.round(saveT/3);const rest=saves.filter(s=>s!==em);const each=Math.floor((saveT-out[em.id])/rest.length);rest.forEach(s=>out[s.id]=each);out[rest[0].id]+=saveT-out[em.id]-each*rest.length}
+    else{const each=Math.floor(saveT/saves.length);saves.forEach(s=>out[s.id]=each);out[saves[0].id]+=saveT-each*saves.length}
+  }
+  if(spends.length){
+    const wt={bills:c.fixedTotal>0?.6:1.4,living:1.6,fun:.6},w=spends.map(s=>wt[s.id]!=null?wt[s.id]:1),ws=w.reduce((a,b)=>a+b,0),share=100-saveT;
+    spends.forEach((s,i)=>out[s.id]=Math.floor(share*w[i]/ws));
+    const diff=share-spends.reduce((a,s)=>a+out[s.id],0);let mx=spends[0];spends.forEach(s=>{if(out[s.id]>out[mx.id])mx=s});out[mx.id]+=diff;
+  }
+  return{pcts:out,ratio,saveT};
+}
+function suggestBox(c){
+  const P=suggestPlan(c),r=Math.round(P.ratio*100);
+  const note=!c.fixedTotal?'ما عندك التزامات ثابتة مسجّلة، فهذا توزيع متوازن للراتب كامل.':r>45?`التزاماتك الثابتة ${r}% من راتبك وهذي نسبة عالية، فخففنا الادخار إلى ${P.saveT}% عشان تكفيك مصاريف الشهر.`:r>30?`التزاماتك الثابتة ${r}% من راتبك، فاقترحنا ادخار ${P.saveT}% من الباقي.`:`التزاماتك الثابتة ${r}% فقط من راتبك، فتقدر تدّخر ${P.saveT}% من الباقي.`;
+  return `<div class="suggest"><div class="card-h" style="margin-bottom:8px"><h2>التوزيع المقترح لـ ${mtxt(c.base)}</h2></div><p class="small" style="margin-bottom:12px">${note}</p>
+   <dl class="rows">${S.sections.map(s=>`<div><dt style="--c:${s.color}"><i></i>${esc(s.name)}</dt><dd style="gap:12px">${money(c.base*(P.pcts[s.id]||0)/100)}<span class="pill" dir="ltr" style="min-width:52px;justify-content:center">${fmtP(P.pcts[s.id]||0)}</span></dd></div>`).join('')}</dl>
+   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" data-act="apply-suggest">${ic('check')}طبّق هذا التوزيع</button><button class="btn ghost" data-act="close-suggest">إلغاء</button></div></div>`;
 }
 function viewBudget(){
-  const key=UI.month,m=ensureMonth(key),c=calc(key);
-  const presets=S.sections.length===5?`<span class="label">قوالب:</span><div class="seg"><button data-act="preset" data-p="40,20,15,20,5">متوازن</button><button data-act="preset" data-p="35,20,10,25,10">ادخار أعلى</button><button data-act="preset" data-p="50,25,15,10,0">مرن</button></div>`:'';
+  const key=UI.month,m=ensureMonth(key),c=calc(key);if(!m.fixed)m.fixed=[];
+  const fr=c.salary?c.fixedTotal/c.salary:0;
+  const presets=S.sections.length===5?`<div class="seg"><button data-act="preset" data-p="40,20,15,20,5">متوازن</button><button data-act="preset" data-p="35,20,10,25,10">ادخار أعلى</button><button data-act="preset" data-p="50,25,15,10,0">مرن</button></div>`:'';
   return `
-  <div class="page-h"><div><span class="eyebrow">${monthLong(key)}</span><h1>الميزانية</h1><p class="status neutral"><i></i>حدّد راتبك ووزّعه بالنسب على الأقسام.</p></div>
+  <div class="page-h"><div><span class="eyebrow">${monthLong(key)}</span><h1>الميزانية</h1><p class="status neutral"><i></i>اكتب راتبك والتزاماتك الثابتة، وبعدها وزّع الباقي على أقسامك.</p></div>
    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="edit-secs" aria-pressed="${UI.edit}">${ic('gear')}${UI.edit?'إنهاء التعديل':'تعديل الأقسام'}</button><button class="btn hide-m" data-act="add">${ic('plus')}عملية جديدة</button></div></div>
+
   <section class="card" style="margin-bottom:16px">
-    <div class="salary">
-      <div class="field"><label for="salaryInp"><span>راتب ${monthName(key)} (${cur()})</span></label><input class="inp num lg" id="salaryInp" type="number" inputmode="decimal" min="0" value="${m.salary||''}" placeholder="0"></div>
-      <div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px"><span class="label">التوزيع</span><span id="totSt">${totalStatus(c.pctTotal)}</span></div>
-        <div class="split" id="splitBar">${splitBar(c)}</div>
-        <div class="split-legend">${c.secs.map(s=>`<span style="--c:${s.sec.color}"><em></em>${esc(s.sec.name)} <b dir="ltr" data-lg="${s.sec.id}">${s.pct}%</b></span>`).join('')}</div></div>
+    <div class="card-h"><h2><span class="step">1</span>الراتب والالتزامات الثابتة</h2></div>
+    <div class="income">
+      <div class="field"><label for="salaryInp"><span>الراتب الشهري (${cur()})</span></label><input class="inp num lg" id="salaryInp" type="number" inputmode="decimal" min="0" value="${m.salary||''}" placeholder="مثال: 8185"></div>
+      <div class="field"><span>التزامات تُخصم أول الشهر (قرض، قسط، إيجار ثابت…)</span>
+        <div class="fixlist">${m.fixed.map(f=>`<div class="fixrow"><input class="inp" data-fxname="${f.id}" value="${esc(f.name)}" maxlength="30" aria-label="اسم الالتزام"><input class="inp num" type="number" inputmode="decimal" min="0" data-fxamt="${f.id}" value="${f.amount}" aria-label="المبلغ"><button class="ibtn" data-act="del-fixed" data-id="${f.id}" aria-label="حذف">${ic('trash')}</button></div>`).join('')}
+        <form class="fixrow" id="fixForm"><input class="inp" id="fxName" placeholder="مثال: القرض" maxlength="30" aria-label="اسم الالتزام الجديد"><input class="inp num" id="fxAmt" type="number" inputmode="decimal" min="0" placeholder="المبلغ" aria-label="مبلغ الالتزام الجديد"><button class="ibtn solid" type="submit" aria-label="إضافة التزام">${ic('plus')}</button></form></div>
+      </div>
     </div>
-    <div class="tools-row">${presets}<button class="btn ghost sm" data-act="normalize" style="margin-inline-start:auto">ضبط المجموع إلى 100%</button></div>
+    <div class="remain">
+      <div><span class="label">الباقي من راتبك بعد الالتزامات</span>
+        <div class="big" style="font-size:clamp(28px,4vw,38px)">${money(c.base)}</div>
+        <span class="small" dir="rtl">${fmt(c.salary)} − ${fmt(c.fixedTotal)} = ${fmt(c.base)} ${cur()}</span></div>
+      ${c.salary?`<div class="fxbar"><div class="split" style="height:10px"><i style="width:${Math.min(100,fr*100)}%;background:var(--ink-3)"></i><i style="width:${Math.max(0,100-fr*100)}%;background:var(--brand)"></i></div>
+        <div class="split-legend"><span style="--c:var(--ink-3)"><em></em>التزامات <b dir="ltr">${Math.round(fr*100)}%</b></span><span style="--c:var(--brand)"><em></em>للتوزيع <b dir="ltr">${Math.round((1-fr)*100)}%</b></span>${fr>.4?'<span class="pill warn">التزاماتك أعلى من 40% من الراتب</span>':''}</div></div>`:''}
+    </div>
   </section>
+
+  <section class="card" style="margin-bottom:16px">
+    <div class="card-h"><h2><span class="step">2</span>وزّع ${mtxt(c.base)} على أقسامك</h2><span id="totSt">${totalStatus(c.pctTotal,c.base)}</span></div>
+    <div class="split" id="splitBar">${splitBar(c)}</div>
+    <div class="split-legend">${c.secs.map(s=>`<span style="--c:${s.sec.color}"><em></em>${esc(s.sec.name)} <b dir="ltr" data-lg="${s.sec.id}">${fmtP(s.pct)}</b></span>`).join('')}</div>
+    <div class="tools-row"><button class="btn sm" data-act="suggest" ${c.base?'':'disabled'}>${ic('star')}اقترح لي توزيع</button>${presets}<button class="btn ghost sm" data-act="normalize" style="margin-inline-start:auto">ضبط المجموع إلى 100%</button></div>
+    ${UI.suggest&&c.base?suggestBox(c):''}
+  </section>
+
   <section class="card">
-    <div class="bhead"><span>القسم</span><span>النسبة</span><span>المخصص</span><span>المصروف / الإيداع</span><span>المتبقي</span><span></span></div>
+    <div class="card-h"><h2><span class="step">3</span>الأقسام</h2><span class="small">حرّك النسبة أو اكتب المبلغ مباشرة</span></div>
+    <div class="bhead"><span>القسم</span><span>النسبة</span><span>المبلغ المخصص</span><span>المصروف / الإيداع</span><span>المتبقي</span><span></span></div>
     ${c.secs.map(s=>budgetRow(s,c)).join('')}
   </section>
   ${UI.edit?`<section class="card" style="margin-top:16px"><div class="card-h"><h2>إضافة قسم</h2></div><form class="addsec" id="addSecForm"><div class="field"><span>اسم القسم</span><input class="inp" id="nsName" placeholder="مثال: سفر، تعليم" required maxlength="30"></div><div class="field" style="max-width:200px"><span>النوع</span><select class="inp" id="nsKind"><option value="spend">صرف</option><option value="save">ادخار</option></select></div><button class="btn" type="submit">${ic('plus')}إضافة</button></form></section>`:''}`;
@@ -707,8 +764,8 @@ function budgetRow(s,c){
   return `<div class="brow" style="--c:${s.sec.color}">
    <div class="brow-main">
     <div class="sname bname"><span class="dotic">${ic(s.sec.icon)}</span><span style="min-width:0"><b>${esc(s.sec.name)}</b><small>${isSave?'ادخار':'صرف'} · ${s.entries.length} عملية</small></span></div>
-    <div class="bpct"><input type="range" min="0" max="100" step="1" value="${s.pct}" data-pct="${id}" aria-label="نسبة ${esc(s.sec.name)}"><span class="pv" data-pv="${id}" dir="ltr">${s.pct}%</span></div>
-    <div class="bn bn1"><span class="ml">المخصص</span><span class="num" data-al="${id}">${fmt(s.alloc)}</span></div>
+    <div class="bpct"><input type="range" min="0" max="100" step="1" value="${Math.round(s.pct)}" data-pct="${id}" aria-label="نسبة ${esc(s.sec.name)}"><span class="pv" data-pv="${id}" dir="ltr">${fmtP(s.pct)}</span></div>
+    <div class="bn bn1"><span class="ml">المبلغ المخصص</span><input class="inp num amt" type="number" inputmode="decimal" min="0" data-amt="${id}" data-al="${id}" value="${Math.round(s.alloc)}" aria-label="مبلغ ${esc(s.sec.name)}" ${c.base?'':'disabled'}></div>
     <div class="bn bn2"><span class="ml">${isSave?'إيداع إضافي':'المصروف'}</span><span class="num">${fmt(isSave?s.deposit:s.spent)}</span></div>
     <div class="bn bn3"><span class="ml">${isSave?'المجنّب':(s.remaining<0?'تجاوز':'المتبقي')}</span><span class="num ${isSave?'pos':(s.remaining<0?'neg':'')}">${fmt(isSave?s.saved:Math.abs(s.remaining))}</span></div>
     <div class="bact"><button class="ibtn" data-act="add" data-id="${id}" aria-label="${isSave?'إيداع':'إضافة مصروف'}" title="${isSave?'إيداع':'إضافة مصروف'}">${ic('plus')}</button><button class="ibtn" data-act="toggle-ents" data-id="${id}" aria-expanded="${open}" aria-label="العمليات" title="العمليات">${ic(open?'up':'down')}</button></div>
@@ -725,9 +782,9 @@ function liveSplit(){
   const c=calc(UI.month);
   c.secs.forEach(s=>{
     const q=a=>$(`[${a}="${s.sec.id}"]`),pv=q('data-pv'),al=q('data-al'),lg=q('data-lg'),seg=q('data-seg');
-    if(pv)pv.textContent=s.pct+'%';if(al)al.textContent=fmt(s.alloc);if(lg)lg.textContent=s.pct+'%';if(seg)seg.style.width=s.pct+'%';
+    if(pv)pv.textContent=fmtP(s.pct);if(al)al.value=Math.round(s.alloc);if(lg)lg.textContent=fmtP(s.pct);if(seg)seg.style.width=s.pct+'%';
   });
-  $('#totSt').innerHTML=totalStatus(c.pctTotal);
+  $('#totSt').innerHTML=totalStatus(c.pctTotal,c.base);
 }
 
 /* ---------- Log ---------- */
@@ -903,9 +960,15 @@ function buildRows(M,hr,map,defKey){
     pick.forEach(x=>x.act='salary');
     list.forEach(x=>{if(x.act!=='salary')x.include=false});
   });
-  // duplicates vs existing
+  // rows that match a fixed commitment (already deducted)
   rows.forEach(x=>{
     if(x.kind!=='expense')return;
+    const k=x.date?keyOf(x.date.y,x.date.m):defKey,m=S.months[k]||S.months[nowKey()],fx=(m&&m.fixed)||[];
+    if(fx.some(f=>Math.abs(f.amount-x.amount)<=1)){x.fixed=true;x.include=false}
+  });
+  // duplicates vs existing
+  rows.forEach(x=>{
+    if(x.kind!=='expense'||x.fixed)return;
     const k=x.date?keyOf(x.date.y,x.date.m):defKey,m=S.months[k];if(!m)return;
     const ds=x.date?x.date.y+'-'+pad(x.date.m)+'-'+pad(x.date.d):null;
     if(m.entries.some(e=>e.amount===Math.round(x.amount)&&nz(e.title)===nz(x.title)&&(!ds||e.date===ds))){x.dup=true;x.include=false}
@@ -963,7 +1026,7 @@ function importRow(r,spend){
     return `<tr class="${r.include?'':'off'}"><td><input type="checkbox" data-imp="inc" data-id="${r.id}" ${r.include?'checked':''} aria-label="تضمين"></td><td>${ds}</td><td><div class="t">${esc(r.title)}</div></td><td class="plus">${money(r.amount,{plus:true})}</td>
     <td><span class="pill good">دخل · يُسجَّل كراتب ${monthName(rowKey(r))}</span></td><td><span class="pill">${r.act==='salary'?'راتب':'تجاهل'}</span></td></tr>`;
   }
-  const cf=r.dup?['مكرر','']:r.conf==='rule'?['من تعديلك','good']:r.conf==='high'?['واضح','good']:['راجعه','warn'];
+  const cf=r.fixed?['التزام ثابت (مخصوم)','']:r.dup?['مكرر','']:r.conf==='rule'?['من تعديلك','good']:r.conf==='high'?['واضح','good']:['راجعه','warn'];
   return `<tr class="${r.include?'':'off'}"><td><input type="checkbox" data-imp="inc" data-id="${r.id}" ${r.include?'checked':''} aria-label="تضمين"></td><td>${ds}</td><td><div class="t">${esc(r.title)}</div></td><td>${money(r.amount)}</td>
    <td><select class="inp" data-imp="sec" data-id="${r.id}" aria-label="القسم">${spend.map(s=>`<option value="${s.id}" ${r.sec===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></td><td><span class="pill ${cf[1]}">${cf[0]}</span></td></tr>`;
 }
@@ -1113,6 +1176,10 @@ document.addEventListener('click',e=>{
       S.sections.forEach((s,i)=>{m.pcts[s.id]=nv[i];if(UI.month===nowKey())s.pct=nv[i]});
       save();render();toast('تم ضبط المجموع على 100%','good');break}
     case'filter':UI.logFilter=id;render();break;
+    case'suggest':UI.suggest=true;render();break;
+    case'close-suggest':UI.suggest=false;render();break;
+    case'apply-suggest':{const c=calc(UI.month),P=suggestPlan(c),m=ensureMonth(UI.month);S.sections.forEach(s=>{m.pcts[s.id]=P.pcts[s.id]||0;if(UI.month===nowKey())s.pct=m.pcts[s.id]});UI.suggest=false;save();render();toast(`تم توزيع ${mtxt(c.base)} على أقسامك`,'good');break}
+    case'del-fixed':{const m=ensureMonth(UI.month);m.fixed=(m.fixed||[]).filter(f=>f.id!==id);save();render();toast('تم حذف الالتزام');break}
     case'pick-file':$('#fileIn').click();break;
     case'imp-cancel':UI.imp=null;WB=null;render();break;
     case'imp-commit':commitImport();break;
@@ -1139,6 +1206,11 @@ document.addEventListener('submit',e=>{
     S.name=$('#sName').value.trim();S.currency=$('#sCur').value;S.opening=Math.max(0,parseFloat($('#sOpen').value)||0);
     S.goal={name:$('#sGoal').value.trim()||'هدفي',target:Math.max(1,parseFloat($('#sTarget').value)||1)};
     save();closeModal();checkBadges(false);render();toast('تم الحفظ','good');
+  }else if(f.id==='fixForm'){
+    const name=$('#fxName').value.trim()||'التزام',amount=Math.max(0,parseFloat($('#fxAmt').value)||0);if(!amount){$('#fxAmt').focus();return}
+    const m=ensureMonth(UI.month);(m.fixed=m.fixed||[]).push({id:uid(),name,amount});save();render();
+    const c=calc(UI.month);toast(`تم خصم ${name}. الباقي من راتبك ${mtxt(c.base)}`,'good',4200);
+    setTimeout(()=>{const i=$('#fxName');if(i)i.focus()},50);
   }else if(f.id==='addSecForm'){
     const name=$('#nsName').value.trim();if(!name)return;
     const kind=$('#nsKind').value;
@@ -1156,7 +1228,9 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.pct){const m=ensureMonth(UI.month);if(UI.month===nowKey()){const s=S.sections.find(x=>x.id===t.dataset.pct);s.pct=+t.value}save();render()}
-  else if(t.id==='salaryInp'){const m=ensureMonth(UI.month);m.salary=Math.max(0,parseFloat(t.value)||0);save();checkBadges(false);render();if(m.salary)toast('تم توزيع راتبك على الأقسام','good')}
+  else if(t.dataset.amt){const m=ensureMonth(UI.month),c=calc(UI.month);if(c.base>0){const p=Math.round(Math.max(0,parseFloat(t.value)||0)/c.base*10000)/100;m.pcts[t.dataset.amt]=p;if(UI.month===nowKey())S.sections.find(x=>x.id===t.dataset.amt).pct=p}save();render()}
+  else if(t.dataset.fxamt||t.dataset.fxname){const m=ensureMonth(UI.month),f=(m.fixed||[]).find(x=>x.id===(t.dataset.fxamt||t.dataset.fxname));if(f){if(t.dataset.fxamt)f.amount=Math.max(0,parseFloat(t.value)||0);else f.name=t.value.trim()||f.name}save();render()}
+  else if(t.id==='salaryInp'){const m=ensureMonth(UI.month);m.salary=Math.max(0,parseFloat(t.value)||0);save();checkBadges(false);render();if(m.salary){const c=calc(UI.month);toast(c.fixedTotal?`الباقي بعد الالتزامات ${mtxt(c.base)}`:'أضف التزاماتك الثابتة إن وجدت، ثم وزّع الباقي','good',4000)}}
   else if(t.dataset.secname){const s=S.sections.find(x=>x.id===t.dataset.secname);s.name=t.value.trim()||s.name;save();render()}
   else if(t.dataset.seckind){S.sections.find(x=>x.id===t.dataset.seckind).kind=t.value;save();render()}
   else if(t.id==='fileIn'){if(t.files[0])readFile(t.files[0]);t.value=''}
