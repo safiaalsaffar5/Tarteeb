@@ -838,6 +838,7 @@ function closeMonth(key,choice){
 }
 
 /* ---------- cloud sync (signed-in viewers keep a private copy on their account) ---------- */
+const IN_CLAUDE=!!(window.claude&&window.claude.use);
 const CLOUD={db:null,uid:null,on:false,status:'local',sent:{},busy:false,again:false,timer:null};
 function cloudSetStatus(s){CLOUD.status=s;const el=document.getElementById('sync');if(el)el.outerHTML=syncPill()}
 function splitState(){
@@ -892,7 +893,7 @@ async function cloudRefresh(){
 }
 function syncPill(){
   const st=CLOUD.status,map={
-    local:['device','محفوظ على هذا الجهاز','بياناتك محفوظة في هذا المتصفح فقط. سجّل دخولك بحساب Claude عشان تتزامن بين أجهزتك.'],
+    local:['device','محفوظ على هذا الجهاز',IN_CLAUDE?'بياناتك محفوظة في هذا المتصفح فقط. سجّل دخولك بحساب Claude عشان تتزامن بين أجهزتك.':'بياناتك محفوظة في هذا المتصفح فقط، وما تنرفع لأي مكان. خذ نسخة احتياطية من الإعدادات بين فترة وفترة.'],
     loading:['cloud','جارِ التحميل…','جارِ تحميل بياناتك من حسابك'],
     saving:['cloud','جارِ الحفظ…','جارِ حفظ آخر التعديلات في حسابك'],
     synced:['cloud','محفوظ في حسابك','بياناتك محفوظة في حسابك وتتزامن بين أجهزتك. ما أحد غيرك يشوفها.'],
@@ -962,7 +963,7 @@ function welcome(){
   return `<section class="welcome">
     <div class="w-art" aria-hidden="true">${flowDemoArt()}</div>
     <div class="w-top"><span class="eyebrow">مرحباً بك في ترتيب</span><h1>اعرف وين يروح راتبك، وشوف مدخراتك تكبر كل شهر</h1>
-      <p class="muted">بياناتك خاصة فيك. إذا كنت مسجّل دخول تنحفظ في حسابك وتوصلها من أي جهاز، وإلا تنحفظ في هذا المتصفح. ما أحد غيرك يشوفها.</p></div>
+      <p class="muted">${IN_CLAUDE?'بياناتك خاصة فيك. إذا كنت مسجّل دخول تنحفظ في حسابك وتوصلها من أي جهاز، وإلا تنحفظ في هذا المتصفح. ما أحد غيرك يشوفها.':'بياناتك خاصة فيك وتنحفظ في متصفحك بس، ما تنرفع لأي مكان وما أحد غيرك يشوفها.'}</p></div>
     <ol class="w-steps">
       <li><span class="step">1</span><div><b>اكتب راتبك والتزاماتك</b><small>مثل القرض أو القسط، وتعرف كم يبقى لك.</small></div></li>
       <li><span class="step">2</span><div><b>وزّع الباقي بنفسك</b><small>حط المبلغ اللي تبيه لكل قسم: مصاريف، ترفيه، مدخرات.</small></div></li>

@@ -209,6 +209,7 @@ function closeMonth(key,choice){
 }
 
 /* ---------- cloud sync (signed-in viewers keep a private copy on their account) ---------- */
+const IN_CLAUDE=!!(window.claude&&window.claude.use);
 const CLOUD={db:null,uid:null,on:false,status:'local',sent:{},busy:false,again:false,timer:null};
 function cloudSetStatus(s){CLOUD.status=s;const el=document.getElementById('sync');if(el)el.outerHTML=syncPill()}
 function splitState(){
@@ -263,7 +264,7 @@ async function cloudRefresh(){
 }
 function syncPill(){
   const st=CLOUD.status,map={
-    local:['device','محفوظ على هذا الجهاز','بياناتك محفوظة في هذا المتصفح فقط. سجّل دخولك بحساب Claude عشان تتزامن بين أجهزتك.'],
+    local:['device','محفوظ على هذا الجهاز',IN_CLAUDE?'بياناتك محفوظة في هذا المتصفح فقط. سجّل دخولك بحساب Claude عشان تتزامن بين أجهزتك.':'بياناتك محفوظة في هذا المتصفح فقط، وما تنرفع لأي مكان. خذ نسخة احتياطية من الإعدادات بين فترة وفترة.'],
     loading:['cloud','جارِ التحميل…','جارِ تحميل بياناتك من حسابك'],
     saving:['cloud','جارِ الحفظ…','جارِ حفظ آخر التعديلات في حسابك'],
     synced:['cloud','محفوظ في حسابك','بياناتك محفوظة في حسابك وتتزامن بين أجهزتك. ما أحد غيرك يشوفها.'],
