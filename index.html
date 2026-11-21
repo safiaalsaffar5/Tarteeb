@@ -189,6 +189,15 @@ input[type=range]{width:100%;accent-color:var(--brand);height:22px;margin:0}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .hint{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:10px;padding:8px 12px;min-height:38px}
 
+/* welcome */
+.welcome{max-width:720px;margin:48px auto 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:32px}
+.w-top h1{font-size:26px;margin:4px 0 10px}
+.w-top p{max-width:60ch}
+.w-steps{list-style:none;margin:24px 0;padding:0;display:flex;flex-direction:column;gap:14px}
+.w-steps li{display:flex;gap:12px;align-items:flex-start}
+.w-steps b{display:block;font-weight:600}.w-steps small{color:var(--ink-2);font-size:13px}
+.w-acts{display:flex;gap:10px;flex-wrap:wrap;padding-top:20px;border-top:1px solid var(--line)}
+@media (max-width:720px){.welcome{margin-top:24px;padding:20px}.w-top h1{font-size:22px}}
 /* budget */
 .step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--brand-soft);color:var(--brand);font-size:12.5px;font-weight:700;margin-inline-end:8px;vertical-align:1px}
 .income{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:24px;align-items:start}
@@ -577,9 +586,22 @@ function secRow(s){
    <span class="tnum c-rem ${!isSave&&s.remaining<0?'neg':''}">${isSave?money(s.saved)+'<small>مجنّب</small>':money(Math.abs(s.remaining))+`<small>${s.remaining<0?'تجاوز':'متبقٍ'}</small>`}</span>
   </button>`;
 }
+function welcome(){
+  return `<section class="welcome">
+    <div class="w-top"><span class="eyebrow">مرحباً بك في ترتيب</span><h1>رتّب راتبك في ثلاث خطوات</h1>
+      <p class="muted">كل شي تكتبه هنا يُحفظ في متصفحك أنت فقط. ما أحد يشوف بياناتك، ولو فتح أحد الرابط من جهازه يبدأ بصفحة جديدة خاصة فيه.</p></div>
+    <ol class="w-steps">
+      <li><span class="step">1</span><div><b>اكتب راتبك والتزاماتك</b><small>مثل القرض أو القسط، وتعرف كم يبقى لك.</small></div></li>
+      <li><span class="step">2</span><div><b>وزّع الباقي بنفسك</b><small>حط المبلغ اللي تبيه لكل قسم: مصاريف، ترفيه، مدخرات.</small></div></li>
+      <li><span class="step">3</span><div><b>سجّل مصاريفك</b><small>يدوياً أو من ملف Excel، وتشوف مدخراتك تكبر كل شهر.</small></div></li>
+    </ol>
+    <div class="w-acts"><button class="btn" data-act="nav" data-v="budget">${ic('wallet')}ابدأ بإدخال راتبك</button><button class="btn ghost" data-act="nav" data-v="import">${ic('upload')}استيراد ملف Excel</button><button class="btn ghost" data-act="load-demo">شوف مثال تجريبي</button></div>
+  </section>`;
+}
 function viewHome(){
   const key=UI.month,c=calc(key);
   if(!c)return `<div class="card empty" style="margin-top:28px"><h3>لا توجد بيانات لهذا الشهر</h3><p>أضف راتبك وعملياتك من صفحة الميزانية.</p></div>`;
+  if(!S.demo&&!c.salary&&!c.secs.some(x=>x.entries.length)&&Object.keys(S.months).length<=1)return welcome();
   const T=timeline(),idx=T.findIndex(p=>p.key===key),pt=T[idx]||{total:S.opening||0,net:c.counted},isLatest=idx===T.length-1;
   const st=statusLine(c),series=T.slice(-12),proj=isLatest?avgNet(T):null;
   const tf=c.closed?1:new Date().getDate()/daysIn(key),sf=c.spendAlloc?c.spent/c.spendAlloc:0;
@@ -1163,7 +1185,7 @@ document.addEventListener('click',e=>{
     case'pick-file':$('#fileIn').click();break;
     case'imp-cancel':UI.imp=null;WB=null;render();break;
     case'imp-commit':commitImport();break;
-    case'start-fresh':S=fresh();ensureMonth(nowKey());UI.month=nowKey();save();setView('budget');toast('ابدأ بإدخال راتبك الشهري','good',4000);setTimeout(()=>{const i=$('#salaryInp');if(i)i.focus()},200);break;
+    case'start-fresh':S=fresh();try{localStorage.removeItem(STORE)}catch(_){}ensureMonth(nowKey());UI.month=nowKey();save();setView('budget');toast('ابدأ بإدخال راتبك الشهري','good',4000);setTimeout(()=>{const i=$('#salaryInp');if(i)i.focus()},200);break;
     case'load-demo':S=demo();UI.month=nowKey();save();closeModal();checkBadges(true);setView('home');toast('تم تحميل بيانات تجريبية');break;
     case'reset-all':
       if(UI.confirm!=='reset'){UI.confirm='reset';openSettings();break}
@@ -1233,7 +1255,7 @@ window.addEventListener('hashchange',()=>{const v=location.hash.slice(1);if(['ho
 
 /* ---------- boot ---------- */
 try{const th=localStorage.getItem('tarteeb.theme');if(th)document.documentElement.setAttribute('data-theme',th)}catch(e){}
-S=load()||demo();
+S=load()||fresh();
 ensureMonth(nowKey());
 if(S.demo&&!(S.unlocked&&S.unlocked.length))checkBadges(true);
 const h0=location.hash.slice(1);if(['home','budget','log','import'].includes(h0))UI.view=h0;
